@@ -2,7 +2,7 @@
 var playlistId = 'PLyDoEZ08Zam3n_bPBi2ylc_NZV--spj5_';
 var channelId;
 var playlistArray;
-var counter = 60;
+var counter;
 
 // After the API loads, call a function to enable the playlist creation form.
 function handleAPILoaded() {
@@ -12,7 +12,6 @@ function handleAPILoaded() {
 // Enable the form for creating a playlist.
 function enableForm() {
   $('#update-playlist-btn').attr('disabled', false);
-  $('#update-playlist-btn').val = "lol";
 }
 
 function updatePlaylist() {
@@ -50,13 +49,15 @@ function parsePlaylist() {
 function showPlayer() {
     return function() {
         $('#update-playlist-btn').attr('disabled', true);
+		counter = 60;
         id = setInterval(function() {
             counter--;
             if(counter < 0) {
                 $('#update-playlist-btn').attr('disabled', false);
+				$('#update-playlist-btn').html("ok update time");
                 clearInterval(id);
             } else {
-                $('#update-playlist-btn').innerHTML = "Wait " + counter.toString() + " seconds";
+                $('#update-playlist-btn').html("Wait " + counter.toString() + " seconds");
             }
         }, 1000);
     
@@ -75,21 +76,17 @@ function parseSubscription() {
          var entry = entries[i];
          urlIds.push(entry['media$group']['yt$videoid']['$t']); 
        }
-       console.log('hello');
-       console.log('playlistarray: ' + playlistArray);
+
        for (var x = 0; x < urlIds.length; x++) {
          console.log(urlIds[x]);
          if (!checkForDuplicates(playlistArray, urlIds[x])) {
            addToPlaylist(urlIds[x]);
          }
-         //setTimeout( callback(urlIds[x]), 1000 * x);
          
          if (x == urlIds.length-1) {
            setTimeout( showPlayer(), 1000);
-           console.log('showPlayer');
          }
        }
-       console.log(urlIds);
     });
 }
 
