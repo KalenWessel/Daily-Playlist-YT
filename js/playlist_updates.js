@@ -2,6 +2,7 @@
 var playlistId = 'PLyDoEZ08Zam3n_bPBi2ylc_NZV--spj5_';
 var channelId;
 var playlistArray;
+var counter = 60;
 
 // After the API loads, call a function to enable the playlist creation form.
 function handleAPILoaded() {
@@ -11,13 +12,14 @@ function handleAPILoaded() {
 // Enable the form for creating a playlist.
 function enableForm() {
   $('#update-playlist-btn').attr('disabled', false);
+  $('#update-playlist-btn').val = "lol";
 }
 
 function updatePlaylist() {
   $('#status').hide();
   playlistArray = [];
+  console.log('Array =' + playlistArray);
   parsePlaylist();
-  parseSubscription();
 }
 
 // Iterates through the videos on "My Subscription" page and compares them against the playlist.
@@ -32,7 +34,7 @@ function checkForDuplicates(playlistVideos, video) {
 
 // Parse all the video IDs from the daily playlists so that we can check for duplicates
 function parsePlaylist() {
-    $.getJSON('https://gdata.youtube.com/feeds/api/playlists/PLyDoEZ08Zam3n_bPBi2ylc_NZV--spj5_/?v=2&alt=json&format=5&max-results=50', function(data) {
+     $.getJSON('https://gdata.youtube.com/feeds/api/playlists/PLyDoEZ08Zam3n_bPBi2ylc_NZV--spj5_/?v=2&alt=json&format=5&max-results=50', function(data) {
        var feed = data.feed;
        var entries = feed.entry || [];
        var urlIds = [];
@@ -40,29 +42,24 @@ function parsePlaylist() {
          var entry = entries[i];
          urlIds.push(entry['media$group']['yt$videoid']['$t']); 
        }
-
-      playlistArray = urlIds;
-      console.log(playlistArray);
+       playlistArray = urlIds;
+       parseSubscription();
    });
 }
 
-// Sleep function to rate limit how quickly we add vidoes to the playlist.
-// Calls the checkforDuplicate function and if the video doesn't exist in the playlist
-// it called the addToPlaylist function with the video idea as the argument.
-function callback(id) {
-    var ID = id;
-    return function() { 
-        if (checkForDuplicates(playlistArray, id)) {
-          return true;
-        } else {
-          console.log(id);
-          addToPlaylist(id);
-        }
-    }
-}
-
 function showPlayer() {
-    return function() { 
+    return function() {
+        $('#update-playlist-btn').attr('disabled', true);
+        id = setInterval(function() {
+            counter--;
+            if(counter < 0) {
+                $('#update-playlist-btn').attr('disabled', false);
+                clearInterval(id);
+            } else {
+                $('#update-playlist-btn').innerHTML = "Wait " + counter.toString() + " seconds";
+            }
+        }, 1000);
+    
         $('.youtube-player').html('<iframe id="playlist-iframe" width="100%" height="600" src="//www.youtube.com/embed/videoseries?list=PLyDoEZ08Zam3n_bPBi2ylc_NZV--spj5_" frameborder="0" allowfullscreen></iframe>');
         $('.youtube-player').fadeIn('slow');
     }
@@ -71,24 +68,28 @@ function showPlayer() {
 // Parse the subscription feed so that we only grab the video IDs. 
 function parseSubscription() {
    $.getJSON('https://gdata.youtube.com/feeds/api/users/sofakingeuro/newsubscriptionvideos?v=2&alt=json&format=5&max-results=10', function(data) {
-      var feed = data.feed;
-      var entries = feed.entry || [];
-      var urlIds = [];
+       var feed = data.feed;
+       var entries = feed.entry || [];
+       var urlIds = [];
        for (var i = 0; i < entries.length; i++) {
          var entry = entries[i];
-         var title = entry.title.$t;
-         var id = entry.id.$t;
-         var sanitizedId = id.replace('tag:youtube.com,2008:video:', '');
-         urlIds.push(sanitizedId);
+         urlIds.push(entry['media$group']['yt$videoid']['$t']); 
        }
-      
+       console.log('hello');
+       console.log('playlistarray: ' + playlistArray);
        for (var x = 0; x < urlIds.length; x++) {
-         setTimeout( callback(urlIds[x]), 1000 * x);
+         console.log(urlIds[x]);
+         if (!checkForDuplicates(playlistArray, urlIds[x])) {
+           addToPlaylist(urlIds[x]);
+         }
+         //setTimeout( callback(urlIds[x]), 1000 * x);
          
          if (x == urlIds.length-1) {
            setTimeout( showPlayer(), 1000);
+           console.log('showPlayer');
          }
        }
+       console.log(urlIds);
     });
 }
 
