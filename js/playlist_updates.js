@@ -77,6 +77,20 @@ function showPlayer() {
     }
 }
 
+// Sleep function to rate limit how quickly we add vidoes to the playlist.
+// Calls the checkforDuplicate function and if the video doesn't exist in the playlist
+// it called the addToPlaylist function with the video idea as the argument.
+function callback(id) {
+    var ID = id;
+    return function() { 
+        if (!checkForDuplicates(playlistArray, ID)) {
+            addToPlaylist(ID);
+            // Set flag to true so that we can display the correct message to the user
+            newSongFlag = true;
+        }
+    }
+}
+
 // Parse the subscription feed so that we only grab the video IDs. 
 function parseSubscription() {
 	$.getJSON('https://gdata.youtube.com/feeds/api/users/sofakingeuro/newsubscriptionvideos?v=2&alt=json&format=5&max-results=10', function(data) {
@@ -89,15 +103,10 @@ function parseSubscription() {
 		}
 
 		for (var x = 0; x < urlIds.length; x++) {
-			console.log(urlIds[x]);
-			if (!checkForDuplicates(playlistArray, urlIds[x])) {
-				addToPlaylist(urlIds[x]);
-				// Set flag to true so that we can display the correct message to the user
-				newSongFlag = true;
-			}
+            setTimeout( callback(urlIds[x]), 1000 * x);
          
 			if (x == urlIds.length-1) {
-				setTimeout( showPlayer(), 1000);
+				setTimeout( showPlayer(), 1000 * x);
 			}
        }
 	});
